@@ -6,7 +6,7 @@ export default function Header() {
     <header className="bg-white shadow p-4">
       <div className="container mx-auto flex items-center justify-between gap-6">
         <div className="flex items-center gap-3">
-          <Box size={28} className="bg-blue-500"/>
+          <Box size={28} className="bg-blue-500 rounded-sm"/>
           <h1 className="text-xl font-bold">CubeTech</h1>
         </div>
 
