@@ -1,7 +1,46 @@
-import BgImage from '../assets/bg.jpeg'
+import Bg2Image from '../assets/bg2.jpeg'
+import NebulaImage from '../assets/nebula.jpeg'
+import VaporProImage from '../assets/vapor-pro.jpeg'
+import BeatStudioImage from '../assets/beat studio.jpeg'
+import ChronoWatchImage from '../assets/chrono smartwatch.png'
 import CategoryCard from '../components/CategoryCard'
+import ProductCards from '../components/ProductsCard'
+
+import { Link } from 'react-router-dom'
+import { ArrowRight } from 'lucide-react';
 
 export default function Home() {
+  const products = [
+    {
+      name: 'Nebula Pro Smartphone',
+      category: 'smartphone',
+      description: 'Flagship performance with AI camera and 5G.',
+      price: 899,
+      image: NebulaImage,
+    },
+    {
+      name: 'Vapor Pro Laptop',
+      category: 'laptop',
+      description: 'Ultra-light powerhouse for creators and professionals.',
+      price: 1299,
+      image: VaporProImage,
+    },
+    {
+      name: 'Beat Studio Headphones',
+      category: 'audio',
+      description: 'Immersive sound with active noise cancellation.',
+      price: 249,
+      image: BeatStudioImage,
+    },
+    {
+      name: 'Chrono Smartwatch',
+      category: 'watch',
+      description: 'Fitness tracking and elegant design in one.',
+      price: 349,
+      image: ChronoWatchImage,
+    },
+  ]
+
   return (
     <div>
       <div className="w-full min-h-screen bg-slate-50">
@@ -10,7 +49,7 @@ export default function Home() {
           
           {/* Background Image Layer */}
           <img 
-            src={BgImage} 
+            src={Bg2Image} 
             alt="Hero Background" 
             className="absolute inset-0 w-full h-full object-cover opacity-80"
           />
@@ -45,8 +84,27 @@ export default function Home() {
             <CategoryCard title='watch' />
             <CategoryCard title='accessory' />
             <CategoryCard title='gaming' />
-
           </div>
+          <div className='mt-5'>
+          {/* Header Wrapper: Pushes title left and button right */}
+          <div className='flex items-center justify-between flex-wrap gap-4'>
+            <div>
+              <h2 className='text-2xl font-bold'>Featured Products</h2>
+              <p className='text-gray-500'>Explore our most demanding gear designed for professionals</p>
+            </div>
+            <Link to="/Shop" className='flex items-center gap-2 mt-5 mr-40 cursor-pointer hover:opacity-80 transition text-slate-900 no-underline'>
+              <span className='font-medium'>View All</span>
+              <ArrowRight className='w-5 h-5' />
+            </Link>
+          </div>
+
+          {/* Product Grid */}
+          <div className='mt-5 flex flex-wrap justify-start justify-evenly'>
+            {products.map((product) => (
+              <ProductCards key={product.name} {...product} />
+            ))}
+          </div>
+        </div>
         </div>
       </div>
     </div>
