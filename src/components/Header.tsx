@@ -13,8 +13,7 @@ export default function Header() {
         <nav className="flex flex-1 justify-center gap-5">
           <Link to="/">Home</Link>
           <Link to="/shop">Shop</Link>
-          <Link to="/categories">Categories</Link>
-          <Link to="/cart">Cart</Link>
+          <Link to="/About">About Us</Link>
         </nav>
 
         <div className="relative flex items-center">
