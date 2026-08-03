@@ -2,12 +2,20 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth, useCart } from '../contexts/AppContext'
 
+type OrderConfirmation = {
+  orderNumber: string
+  message: string
+  total: number
+  orderSummary: Array<{ id: number; name: string; quantity: number; price: number; total: number }>
+}
+
 export default function Checkout() {
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
   const { cartItems, cartTotal, clearCart } = useCart()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [confirmation, setConfirmation] = useState<OrderConfirmation | null>(null)
   const [customerName, setCustomerName] = useState(user?.name ?? '')
   const [customerEmail, setCustomerEmail] = useState(user?.email ?? '')
   const [customerPhone, setCustomerPhone] = useState(user?.phone ?? '')
@@ -25,6 +33,57 @@ export default function Checkout() {
         <Link to="/auth" className="inline-block rounded-xl bg-blue-600 px-6 py-3 text-white hover:bg-blue-700 transition">
           Sign In / Sign Up
         </Link>
+      </div>
+    )
+  }
+
+  if (confirmation) {
+    return (
+      <div className="p-8 max-w-5xl mx-auto space-y-8">
+        <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Order confirmed</p>
+              <h1 className="text-3xl font-bold">Thank you for your purchase!</h1>
+            </div>
+            <div className="rounded-3xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+              Order #{confirmation.orderNumber}
+            </div>
+          </div>
+
+          <p className="mt-6 text-slate-600">{confirmation.message}</p>
+
+          <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-6">
+            <h2 className="text-xl font-semibold text-slate-900">Order Summary</h2>
+            <div className="mt-5 space-y-4">
+              {confirmation.orderSummary.map((item) => (
+                <div key={item.id} className="flex flex-col gap-2 rounded-3xl bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-semibold text-slate-900">{item.name}</p>
+                    <p className="text-sm text-slate-500">Qty: {item.quantity}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-slate-500">${item.price.toFixed(2)} each</p>
+                    <p className="font-semibold text-slate-900">${item.total.toFixed(2)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-slate-500">Total amount</p>
+                <p className="text-2xl font-bold text-slate-900">${confirmation.total.toFixed(2)}</p>
+              </div>
+              <button
+                onClick={() => navigate('/shop')}
+                className="inline-flex items-center justify-center rounded-full bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-900"
+              >
+                Continue shopping
+              </button>
+            </div>
+          </div>
+        </section>
       </div>
     )
   }
@@ -97,8 +156,12 @@ export default function Checkout() {
       }
 
       clearCart()
-      alert(data.message || 'Your order has been placed successfully!')
-      navigate('/shop')
+      setConfirmation({
+        orderNumber: data.orderNumber,
+        message: data.message || 'Your order has been placed successfully!',
+        total: data.total,
+        orderSummary: data.orderSummary,
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to place order.')
     } finally {

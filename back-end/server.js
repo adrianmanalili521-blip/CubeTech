@@ -337,22 +337,32 @@ app.put('/api/user', (req, res) => {
   }
 });
 
+function generateOrderNumber() {
+  const now = new Date();
+  return `ORD-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+}
+
 // 6. PLACE CHECKOUT ORDER
 app.post('/api/checkout', (req, res) => {
   try {
-    const { items } = req.body;
+    const { customer, items } = req.body;
+
+    if (!customer || typeof customer !== 'object') {
+      return res.status(400).json({ error: 'Customer information is required for checkout.' });
+    }
 
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'No items provided for checkout.' });
     }
 
-    const getProductStmt = db.prepare('SELECT id, qty FROM products WHERE id = ?');
+    const getProductStmt = db.prepare('SELECT id, qty, name, price FROM products WHERE id = ?');
     const updateQtyStmt = db.prepare('UPDATE products SET qty = qty - ? WHERE id = ?');
 
+    const orderSummary = [];
     const transaction = db.transaction((orderItems) => {
       for (const orderItem of orderItems) {
         if (typeof orderItem.id !== 'number' || typeof orderItem.quantity !== 'number') {
-          throw new Error('Invalid order item data.')
+          throw new Error('Invalid order item data.');
         }
 
         const product = getProductStmt.get(orderItem.id);
@@ -365,12 +375,30 @@ app.post('/api/checkout', (req, res) => {
         }
 
         updateQtyStmt.run(orderItem.quantity, orderItem.id);
+
+        orderSummary.push({
+          id: product.id,
+          name: product.name,
+          quantity: orderItem.quantity,
+          price: product.price,
+          total: product.price * orderItem.quantity,
+        });
       }
     });
 
     transaction(items);
 
-    res.json({ success: true, message: 'Order placed successfully.' });
+    const orderNumber = generateOrderNumber();
+    const totalAmount = orderSummary.reduce((sum, item) => sum + item.total, 0);
+
+    res.json({
+      success: true,
+      message: 'Order placed successfully.',
+      orderNumber,
+      orderSummary,
+      total: totalAmount,
+      customer,
+    });
   } catch (err) {
     res.status(400).json({ error: err instanceof Error ? err.message : 'Unable to place order.' });
   }
