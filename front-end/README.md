@@ -1,13 +1,19 @@
-# React + TypeScript + Vite
+# CubeTech Front-End
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This repository contains the CubeTech e-commerce front-end application built with React, TypeScript, Vite, and Tailwind CSS.
 
-Currently, two official plugins are available:
+The project includes a React front-end and an Express + SQLite back-end for authentication, shopping cart, checkout, and admin order management.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Default Admin Credentials
 
-## React Compiler
+The application seeds a default admin account in SQLite when the back-end server initializes.
+
+- Email: `admin`
+- Password: `123`
+
+> Use these credentials to log in and access the admin dashboard at `/admin`.
+
+## Getting Started
 
 The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
