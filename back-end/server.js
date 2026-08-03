@@ -37,7 +37,56 @@ function initializeDatabase() {
       price REAL NOT NULL,
       qty INTEGER NOT NULL DEFAULT 0,
       image TEXT,
-      overview TEXT
+      overview TEXT,
+      status TEXT NOT NULL DEFAULT 'Active'
+    )
+  `).run();
+
+  const productColumns = db.prepare("PRAGMA table_info('products')").all();
+  const hasStatusColumn = productColumns.some((column) => column.name === 'status');
+  if (!hasStatusColumn) {
+    db.prepare("ALTER TABLE products ADD COLUMN status TEXT NOT NULL DEFAULT 'Active'").run();
+  }
+
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE
+    )
+  `).run();
+
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      orderNumber TEXT NOT NULL UNIQUE,
+      customerUserId INTEGER,
+      customerName TEXT NOT NULL,
+      customerEmail TEXT NOT NULL,
+      customerPhone TEXT,
+      customerAddress TEXT,
+      customerCity TEXT,
+      customerPostalCode TEXT,
+      customerCountry TEXT,
+      paymentMethod TEXT,
+      status TEXT NOT NULL DEFAULT 'Pending',
+      notes TEXT,
+      total REAL NOT NULL,
+      createdAt TEXT NOT NULL,
+      FOREIGN KEY (customerUserId) REFERENCES users(id)
+    )
+  `).run();
+
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS order_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      orderId INTEGER NOT NULL,
+      productId INTEGER NOT NULL,
+      productName TEXT NOT NULL,
+      quantity INTEGER NOT NULL,
+      price REAL NOT NULL,
+      total REAL NOT NULL,
+      FOREIGN KEY (orderId) REFERENCES orders(id),
+      FOREIGN KEY (productId) REFERENCES products(id)
     )
   `).run();
 
@@ -52,7 +101,8 @@ function initializeDatabase() {
       city TEXT,
       postalCode TEXT,
       country TEXT,
-      paymentMethod TEXT
+      paymentMethod TEXT,
+      isAdmin INTEGER NOT NULL DEFAULT 0
     )
   `).run();
 
@@ -60,6 +110,15 @@ function initializeDatabase() {
   const hasPaymentMethodColumn = userColumns.some((column) => column.name === 'paymentMethod');
   if (!hasPaymentMethodColumn) {
     db.prepare('ALTER TABLE users ADD COLUMN paymentMethod TEXT').run();
+  }
+  const hasIsAdminColumn = userColumns.some((column) => column.name === 'isAdmin');
+  if (!hasIsAdminColumn) {
+    db.prepare('ALTER TABLE users ADD COLUMN isAdmin INTEGER NOT NULL DEFAULT 0').run();
+  }
+
+  const existingAdmin = db.prepare('SELECT id FROM users WHERE email = ?').get('admin');
+  if (!existingAdmin) {
+    db.prepare('INSERT INTO users (name, email, password, isAdmin) VALUES (?, ?, ?, ?)').run('admin', 'admin', '123', 1);
   }
 
   // Helper function to patch older absolute image string records safely
@@ -208,12 +267,23 @@ function initializeDatabase() {
 // 1. GET ALL PRODUCTS
 app.get('/api/products', (req, res) => {
   try {
+    const includeInactive = req.query.includeInactive === 'true';
+    const categoryFilter = req.query.category;
     let query = 'SELECT * FROM products';
     const params = [];
+    const filters = [];
 
-    if (req.query.category) {
-      query += ' WHERE LOWER(category) = LOWER(?)';
-      params.push(req.query.category);
+    if (!includeInactive) {
+      filters.push("status = 'Active'");
+    }
+
+    if (categoryFilter) {
+      filters.push('LOWER(category) = LOWER(?)');
+      params.push(categoryFilter);
+    }
+
+    if (filters.length > 0) {
+      query += ` WHERE ${filters.join(' AND ')}`;
     }
 
     if (typeof req.query.limit !== 'undefined') {
@@ -287,7 +357,7 @@ app.post('/api/login', (req, res) => {
       return res.status(400).json({ error: 'Email and password are required.' });
     }
 
-    const user = db.prepare('SELECT id, name, email, phone, address, city, postalCode, country, paymentMethod FROM users WHERE email = ? AND password = ?').get(email, password);
+    const user = db.prepare('SELECT id, name, email, phone, address, city, postalCode, country, paymentMethod, isAdmin FROM users WHERE email = ? AND password = ?').get(email, password);
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password.' });
@@ -390,6 +460,42 @@ app.post('/api/checkout', (req, res) => {
 
     const orderNumber = generateOrderNumber();
     const totalAmount = orderSummary.reduce((sum, item) => sum + item.total, 0);
+    const customerUser = db.prepare('SELECT id FROM users WHERE email = ?').get(customer.email);
+
+    const insertOrder = db.prepare(
+      `INSERT INTO orders (orderNumber, customerUserId, customerName, customerEmail, customerPhone, customerAddress, customerCity, customerPostalCode, customerCountry, paymentMethod, status, notes, total, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+
+    const result = insertOrder.run(
+      orderNumber,
+      customerUser?.id || null,
+      customer.name,
+      customer.email,
+      customer.phone || null,
+      customer.address || null,
+      customer.city || null,
+      customer.postalCode || null,
+      customer.country || null,
+      customer.paymentMethod || null,
+      'Pending',
+      null,
+      totalAmount,
+      new Date().toISOString(),
+    );
+
+    const orderId = result.lastInsertRowid;
+    const insertOrderItem = db.prepare(
+      `INSERT INTO order_items (orderId, productId, productName, quantity, price, total) VALUES (?, ?, ?, ?, ?, ?)`
+    );
+
+    const orderItemsTransaction = db.transaction((orderItems) => {
+      for (const item of orderItems) {
+        insertOrderItem.run(orderId, item.id, item.name, item.quantity, item.price, item.total);
+      }
+    });
+
+    orderItemsTransaction(orderSummary);
 
     res.json({
       success: true,
@@ -401,6 +507,207 @@ app.post('/api/checkout', (req, res) => {
     });
   } catch (err) {
     res.status(400).json({ error: err instanceof Error ? err.message : 'Unable to place order.' });
+  }
+});
+
+app.get('/api/categories', (req, res) => {
+  try {
+    const rows = db.prepare('SELECT * FROM categories ORDER BY name').all();
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/categories/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const category = db.prepare('SELECT * FROM categories WHERE id = ?').get(id);
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found.' });
+    }
+    res.json(category);
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Unable to load category.' });
+  }
+});
+
+app.post('/api/categories', (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Category name is required.' });
+    }
+    const existing = db.prepare('SELECT id FROM categories WHERE LOWER(name) = LOWER(?)').get(name.trim());
+    if (existing) {
+      return res.status(400).json({ error: 'Category already exists.' });
+    }
+    const result = db.prepare('INSERT INTO categories (name) VALUES (?)').run(name.trim());
+    res.json({ id: result.lastInsertRowid, name: name.trim() });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Unable to create category.' });
+  }
+});
+
+app.put('/api/categories/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Category name is required.' });
+    }
+    const existing = db.prepare('SELECT id FROM categories WHERE id = ?').get(id);
+    if (!existing) {
+      return res.status(404).json({ error: 'Category not found.' });
+    }
+    db.prepare('UPDATE categories SET name = ? WHERE id = ?').run(name.trim(), id);
+    res.json({ id: Number(id), name: name.trim() });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Unable to update category.' });
+  }
+});
+
+app.delete('/api/categories/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const productsUsingCategory = db.prepare('SELECT COUNT(*) AS count FROM products WHERE LOWER(category) = LOWER((SELECT name FROM categories WHERE id = ?))').get(id);
+    if (productsUsingCategory && productsUsingCategory.count > 0) {
+      return res.status(400).json({ error: 'Category is assigned to existing products and cannot be deleted.' });
+    }
+    const result = db.prepare('DELETE FROM categories WHERE id = ?').run(id);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Category not found.' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Unable to delete category.' });
+  }
+});
+
+app.post('/api/products', (req, res) => {
+  try {
+    const { name, category, description, price, qty, image, overview, status } = req.body;
+    if (!name || !category || !description || typeof price !== 'number' || typeof qty !== 'number') {
+      return res.status(400).json({ error: 'Missing required product fields.' });
+    }
+    const result = db.prepare(
+      'INSERT INTO products (name, category, description, price, qty, image, overview, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(name.trim(), category.trim(), description.trim(), price, qty, image || '', overview || '', status || 'Active');
+    const product = db.prepare('SELECT * FROM products WHERE id = ?').get(result.lastInsertRowid);
+    res.json(product);
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Unable to create product.' });
+  }
+});
+
+app.put('/api/products/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, category, description, price, qty, image, overview, status } = req.body;
+    const existing = db.prepare('SELECT id FROM products WHERE id = ?').get(id);
+    if (!existing) {
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+    db.prepare(
+      'UPDATE products SET name = ?, category = ?, description = ?, price = ?, qty = ?, image = ?, overview = ?, status = ? WHERE id = ?'
+    ).run(name.trim(), category.trim(), description.trim(), price, qty, image || '', overview || '', status || 'Active', id);
+    const product = db.prepare('SELECT * FROM products WHERE id = ?').get(id);
+    res.json(product);
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Unable to update product.' });
+  }
+});
+
+app.delete('/api/products/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = db.prepare('DELETE FROM products WHERE id = ?').run(id);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Unable to delete product.' });
+  }
+});
+
+app.get('/api/admin/stats', (req, res) => {
+  try {
+    const totalProducts = db.prepare("SELECT COUNT(*) AS count FROM products").get().count;
+    const totalOrders = db.prepare("SELECT COUNT(*) AS count FROM orders").get().count;
+    const pendingOrders = db.prepare("SELECT COUNT(*) AS count FROM orders WHERE status = 'Pending'").get().count;
+    const completedOrders = db.prepare("SELECT COUNT(*) AS count FROM orders WHERE status = 'Completed'").get().count;
+    const totalCustomers = db.prepare("SELECT COUNT(*) AS count FROM users WHERE isAdmin = 0").get().count;
+    const totalSales = db.prepare('SELECT COALESCE(SUM(total),0) AS sum FROM orders').get().sum;
+    res.json({ totalProducts, totalOrders, pendingOrders, completedOrders, totalCustomers, totalSales });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Unable to load admin stats.' });
+  }
+});
+
+app.get('/api/admin/orders', (req, res) => {
+  try {
+    const rows = db.prepare('SELECT id, orderNumber, customerName, createdAt, total, paymentMethod, status FROM orders ORDER BY createdAt DESC').all();
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Unable to load orders.' });
+  }
+});
+
+app.get('/api/admin/orders/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found.' });
+    }
+    const items = db.prepare('SELECT productId, productName, quantity, price, total FROM order_items WHERE orderId = ?').all(id);
+    res.json({ ...order, items });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Unable to load order details.' });
+  }
+});
+
+app.put('/api/admin/orders/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, notes } = req.body;
+    const allowed = ['Pending', 'Confirmed', 'Preparing', 'Shipped', 'Completed', 'Cancelled'];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ error: 'Invalid order status.' });
+    }
+    const existing = db.prepare('SELECT id FROM orders WHERE id = ?').get(id);
+    if (!existing) {
+      return res.status(404).json({ error: 'Order not found.' });
+    }
+    db.prepare('UPDATE orders SET status = ?, notes = ? WHERE id = ?').run(status, notes || null, id);
+    const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
+    const items = db.prepare('SELECT productId, productName, quantity, price, total FROM order_items WHERE orderId = ?').all(id);
+    res.json({ ...order, items });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Unable to update order.' });
+  }
+});
+
+app.get('/api/admin/customers', (req, res) => {
+  try {
+    const rows = db.prepare(
+      `SELECT u.id, u.name, u.email, u.phone, COUNT(o.id) AS orderCount, COALESCE(SUM(o.total), 0) AS totalPurchase
+       FROM users u
+       LEFT JOIN orders o ON o.customerUserId = u.id
+       WHERE u.isAdmin = 0
+       GROUP BY u.id
+       ORDER BY u.name`
+    ).all();
+    const mapped = rows.map((row) => ({
+      ...row,
+      status: 'Active',
+      totalPurchase: Number(row.totalPurchase),
+      orderCount: Number(row.orderCount),
+    }));
+    res.json(mapped);
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Unable to load customers.' });
   }
 });
 

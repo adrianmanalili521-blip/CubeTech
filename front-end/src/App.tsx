@@ -7,6 +7,14 @@ import Product from './pages/Product'
 import Cart from './pages/Cart'
 import Auth from './pages/Auth'
 import Checkout from './pages/Checkout'
+import AdminDashboard from './pages/AdminDashboard'
+import AdminProducts from './pages/AdminProducts'
+import AdminProductForm from './pages/AdminProductForm'
+import AdminCategories from './pages/AdminCategories'
+import AdminCategoryForm from './pages/AdminCategoryForm'
+import AdminOrders from './pages/AdminOrders'
+import AdminOrderDetails from './pages/AdminOrderDetails'
+import AdminCustomers from './pages/AdminCustomers'
 
 export default function App() {
   return (
@@ -20,6 +28,16 @@ export default function App() {
           <Route path="cart" element={<Cart />} />
           <Route path="auth" element={<Auth />} />
           <Route path="checkout" element={<Checkout />} />
+          <Route path="admin" element={<AdminDashboard />} />
+          <Route path="admin/products" element={<AdminProducts />} />
+          <Route path="admin/products/create" element={<AdminProductForm />} />
+          <Route path="admin/products/:id/edit" element={<AdminProductForm />} />
+          <Route path="admin/categories" element={<AdminCategories />} />
+          <Route path="admin/categories/create" element={<AdminCategoryForm />} />
+          <Route path="admin/categories/:id/edit" element={<AdminCategoryForm />} />
+          <Route path="admin/orders" element={<AdminOrders />} />
+          <Route path="admin/orders/:id" element={<AdminOrderDetails />} />
+          <Route path="admin/customers" element={<AdminCustomers />} />
         </Route>
       </Routes>
     </BrowserRouter>

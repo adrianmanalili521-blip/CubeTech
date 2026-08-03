@@ -7,6 +7,7 @@ export type Product = {
   qty: number
   image: string
   overview: string
+  status: string
 }
 
 export type CartItem = {
@@ -23,4 +24,5 @@ export type User = {
   postalCode?: string
   country?: string
   paymentMethod?: string
+  isAdmin?: boolean
 }

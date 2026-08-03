@@ -12,10 +12,10 @@ type AuthContextType = {
     email: string,
     password: string,
     extras?: Omit<User, 'name' | 'email'>,
-  ) => string | null
-  login: (email: string, password: string) => string | null
+  ) => Promise<string | null>
+  login: (email: string, password: string) => Promise<string | null>
   logout: () => void
-  updateProfile: (profile: Partial<User>) => string | null
+  updateProfile: (profile: Partial<User>) => Promise<string | null>
 }
 
 type CartContextType = {

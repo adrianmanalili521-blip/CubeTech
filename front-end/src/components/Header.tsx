@@ -18,6 +18,7 @@ export default function Header() {
           <Link to="/">Home</Link>
           <Link to="/shop">Shop</Link>
           <Link to="/About">About Us</Link>
+          {user?.isAdmin && <Link to="/admin">Admin</Link>}
         </nav>
 
         <div className="relative flex items-center">
