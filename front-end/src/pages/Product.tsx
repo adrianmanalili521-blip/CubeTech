@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import type { Product } from '../types'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useAuth, useCart } from '../contexts/AppContext'
+import type { Product } from '../types.ts'
 
 export default function Product() {
+  const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
+  const { addToCart } = useCart()
   const { id } = useParams<{ id: string }>()
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
@@ -147,7 +151,20 @@ export default function Product() {
                 <div className="flex-1 flex flex-col gap-1.5 justify-end">
                   <span className="hidden sm:block text-xs font-bold text-transparent select-none uppercase">Action</span>
                   <button
-                    onClick={() => alert(`Added ${quantity} x ${product.name} to cart!`)}
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        navigate('/auth')
+                        return
+                      }
+
+                      const message = addToCart(product, quantity)
+                      if (message) {
+                        alert(message)
+                        return
+                      }
+
+                      navigate('/cart')
+                    }}
                     className="w-full h-[46px] bg-black text-white px-8 rounded-lg text-sm font-medium hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition-all shadow-sm active:scale-[0.99]"
                   >
                     Add to Cart

@@ -1,49 +1,58 @@
-import { Search } from 'lucide-react';
+import { Search } from 'lucide-react'
 
-export default function FilterCard() {
-    const categories = [
-        { id: 'smartphone', label: 'Smartphones' },
-        { id: 'laptop', label: 'Laptops' },
-        { id: 'audio', label: 'Audio' },
-        { id: 'wearable', label: 'Wearables' },
-        { id: 'accessories', label: 'Accessories' },
-        { id: 'gaming', label: 'Gaming' }
-    ];
+type FilterCardProps = {
+  searchTerm: string
+  selectedCategory: string
+  onSearchChange: (value: string) => void
+  onCategoryChange: (value: string) => void
+}
 
-    return (
-        <div className='flex flex-col justify-start h-fit w-80 bg-white shadow rounded-sm p-4 gap-4'>
-            <div>
-                <p className='font-bold text-xs text-gray-500 tracking-wider mb-2'>SEARCH</p>
-                <div className="relative text-slate-400 w-full">
-                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                        <Search className="w-5 h-5" />
-                    </div>
-                    <input 
-                        placeholder="Search..." 
-                        className="w-full h-9 bg-gray-100 rounded-lg py-2 pl-10 pr-4 text-sm text-slate-900 border border-transparent focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
-                    />
-                </div>
-            </div>
+const categories = [
+  { id: '', label: 'All' },
+  { id: 'smartphone', label: 'Smartphones' },
+  { id: 'laptop', label: 'Laptops' },
+  { id: 'audio', label: 'Audio' },
+  { id: 'watch', label: 'Wearables' },
+  { id: 'accessory', label: 'Accessories' },
+  { id: 'gaming', label: 'Gaming' },
+]
 
-            <div>
-                <p className='font-bold text-xs text-gray-500 tracking-wider mb-2'>CATEGORY</p>
-                {/* 1. Flex layout wrapper with vertical spacing */}
-                <div className='flex flex-col gap-2.5'>
-                    {categories.map((cat) => (
-                        // 2. Wrap pair in flex row to force button to left, text to right
-                        <label key={cat.id} htmlFor={cat.id} className='flex items-center gap-3 cursor-pointer text-sm text-slate-700 select-none'>
-                            <input 
-                                id={cat.id}
-                                type='radio'
-                                name='Categories'
-                                // 3. Custom square styling overriding native circular layout
-                                className='w-4 h-4 rounded-none border border-gray-300 text-blue-600 focus:ring-0 appearance-none checked:bg-blue-500 checked:border-blue-500 relative checked:after:content-["✓"] checked:after:text-white checked:after:text-[10px] checked:after:absolute checked:after:inset-0 checked:after:flex checked:after:items-center checked:after:justify-center'
-                            />
-                            <span>{cat.label}</span>
-                        </label>
-                    ))}
-                </div>
-            </div>
+export default function FilterCard({ searchTerm, selectedCategory, onSearchChange, onCategoryChange }: FilterCardProps) {
+  return (
+    <div className="flex flex-col gap-6 rounded-2xl bg-white p-4 shadow-sm border border-slate-200">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 mb-2">Search</p>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400">
+            <Search className="w-4 h-4" />
+          </div>
+          <input
+            value={searchTerm}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="Search products"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm text-slate-900 focus:border-blue-500 focus:bg-white outline-none transition"
+          />
         </div>
-    );
+      </div>
+
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 mb-2">Category</p>
+        <div className="space-y-2">
+          {categories.map((cat) => (
+            <label key={cat.id} className="flex items-center gap-3 text-sm text-slate-700 cursor-pointer">
+              <input
+                type="radio"
+                name="category"
+                value={cat.id}
+                checked={selectedCategory === cat.id}
+                onChange={() => onCategoryChange(cat.id)}
+                className="h-4 w-4 rounded-full border border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span>{cat.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
 }

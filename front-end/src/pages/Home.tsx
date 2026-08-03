@@ -4,7 +4,7 @@ import CategoryCard from '../components/CategoryCard'
 import ProductCards from '../components/ProductsCard'
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
-import type { Product } from '../types'
+import type { Product } from '../types.ts'
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([])
@@ -73,7 +73,7 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="mt-5 flex flex-wrap justify-start justify-evenly gap-5">
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
               {loading ? (
                 <div className="text-gray-600">Loading featured products...</div>
               ) : error ? (

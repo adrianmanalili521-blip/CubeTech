@@ -8,3 +8,19 @@ export type Product = {
   image: string
   overview: string
 }
+
+export type CartItem = {
+  product: Product
+  quantity: number
+}
+
+export type User = {
+  name: string
+  email: string
+  phone?: string
+  address?: string
+  city?: string
+  postalCode?: string
+  country?: string
+  paymentMethod?: string
+}
