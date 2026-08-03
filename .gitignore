@@ -7,10 +7,17 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Monorepo Dependencies & Database (CRUCIAL ADDITIONS)
+**/node_modules/
+**/dist/
+**/dist-ssr/
+back-end/database.db
+back-end/database.db-journal
+back-end/database.db-wal
+
+# Local env files
 *.local
+**/.env
 
 # Editor directories and files
 .vscode/*
