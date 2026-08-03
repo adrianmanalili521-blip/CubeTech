@@ -40,12 +40,12 @@ export default function Auth() {
     }
 
     const result = await login(email, password)
-    if (result) {
+    if (typeof result === 'string') {
       setError(result)
       return
     }
 
-    navigate('/cart')
+    navigate(result?.isAdmin ? '/admin' : '/cart')
   }
 
   const handleUpdateProfile = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -212,11 +212,11 @@ export default function Auth() {
           )}
 
           <label className="grid gap-2 text-sm text-slate-700">
-            Email
+            {mode === 'signup' ? 'Email' : 'Email or username'}
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              type="email"
+              type={mode === 'signup' ? 'email' : 'text'}
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-blue-500 focus:bg-white"
             />
           </label>

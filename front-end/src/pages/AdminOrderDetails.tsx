@@ -31,6 +31,7 @@ export default function AdminOrderDetails() {
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -49,6 +50,7 @@ export default function AdminOrderDetails() {
   const handleSave = async () => {
     if (!order) return
     setError(null)
+    setSuccess(null)
     const response = await fetch(`/api/admin/orders/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -60,6 +62,7 @@ export default function AdminOrderDetails() {
       return
     }
     setOrder(data)
+    setSuccess('Order status updated successfully.')
   }
 
   if (!user?.isAdmin) {
@@ -156,6 +159,7 @@ export default function AdminOrderDetails() {
           </label>
         </div>
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+        {success && <p className="mt-4 text-sm text-emerald-700">{success}</p>}
         <button onClick={handleSave} className="mt-6 rounded-full bg-black px-6 py-3 text-sm font-semibold text-white hover:bg-slate-900 transition">
           Save changes
         </button>

@@ -7,6 +7,7 @@ import Product from './pages/Product'
 import Cart from './pages/Cart'
 import Auth from './pages/Auth'
 import Checkout from './pages/Checkout'
+import Orders from './pages/Orders'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminProducts from './pages/AdminProducts'
 import AdminProductForm from './pages/AdminProductForm'
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="cart" element={<Cart />} />
           <Route path="auth" element={<Auth />} />
           <Route path="checkout" element={<Checkout />} />
+          <Route path="orders" element={<Orders />} />
           <Route path="admin" element={<AdminDashboard />} />
           <Route path="admin/products" element={<AdminProducts />} />
           <Route path="admin/products/create" element={<AdminProductForm />} />

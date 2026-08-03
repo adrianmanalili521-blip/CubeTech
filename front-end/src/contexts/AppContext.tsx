@@ -13,7 +13,7 @@ type AuthContextType = {
     password: string,
     extras?: Omit<User, 'name' | 'email'>,
   ) => Promise<string | null>
-  login: (email: string, password: string) => Promise<string | null>
+  login: (email: string, password: string) => Promise<User | string | null>
   logout: () => void
   updateProfile: (profile: Partial<User>) => Promise<string | null>
 }
@@ -98,7 +98,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const login = async (email: string, password: string): Promise<string | null> => {
+  const login = async (email: string, password: string): Promise<User | string | null> => {
     if (!email || !password) {
       return 'Please enter email and password.'
     }
@@ -116,7 +116,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       setUser(data)
-      return null
+      return data
     } catch (err) {
       return err instanceof Error ? err.message : 'Unable to log in.'
     }

@@ -10,7 +10,11 @@ const PORT = process.env.PORT || 5000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-app.use(cors({ origin: 'http://localhost:5173' }));
+app.use(
+  cors({
+    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  }),
+)
 app.use(express.json());
 
 // Connect to SQLite Database
@@ -507,6 +511,19 @@ app.post('/api/checkout', (req, res) => {
     });
   } catch (err) {
     res.status(400).json({ error: err instanceof Error ? err.message : 'Unable to place order.' });
+  }
+});
+
+app.get('/api/orders', (req, res) => {
+  try {
+    const email = req.query.email;
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ error: 'Customer email is required.' });
+    }
+    const rows = db.prepare('SELECT id, orderNumber, customerName, createdAt, total, paymentMethod, status FROM orders WHERE customerEmail = ? ORDER BY createdAt DESC').all(email);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Unable to load orders.' });
   }
 });
 
