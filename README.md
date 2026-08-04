@@ -1,81 +1,73 @@
-# CubeTech Front-End
+# CubeTech
 
-This repository contains the CubeTech e-commerce front-end application built with React, TypeScript, Vite, and Tailwind CSS.
+CubeTech is a full-stack electronics e-commerce application with a React and TypeScript storefront, an Express backend, and a SQLite database. The project supports browsing products, managing a cart, placing orders, and using an admin dashboard for catalog and order management.
 
-The project includes a React front-end and an Express + SQLite back-end for authentication, shopping cart, checkout, and admin order management.
+## Project Structure
+
+- front-end: Vite + React + TypeScript storefront and admin UI
+- back-end: Express + SQLite API server
+- docs: setup guides, API reference, and architecture notes
+
+## Features
+
+- Product browsing with category-based views
+- Product detail pages and shopping cart flow
+- Checkout and order history for customers
+- Admin dashboard for products, categories, orders, and customers
+- Default seeded admin account for initial testing
 
 ## Default Admin Credentials
 
-The application seeds a default admin account in SQLite when the back-end server initializes.
+- Email: admin
+- Password: 123
 
-- Email: `admin`
-- Password: `123`
+Use these credentials to sign in and access the admin dashboard at /admin.
 
-> Use these credentials to log in and access the admin dashboard at `/admin`.
+## Quick Start
 
-## Getting Started
+### 1. Install dependencies
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+cd front-end
+npm install
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+cd ../back-end
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Start the backend
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+cd back-end
+npm run dev
+```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 3. Start the frontend
 
+```bash
+cd front-end
+npm run dev
+```
+
+The app is available at:
+
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:5000
+
+## Documentation
+
+See the docs folder for more detailed guidance:
+
+- [docs/SETUP.md](docs/SETUP.md)
+- [docs/API.md](docs/API.md)
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
+
+## Build
+
+To build the frontend for production:
+
+```bash
+cd front-end
+npm run build
 ```
