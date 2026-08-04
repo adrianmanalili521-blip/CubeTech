@@ -32,7 +32,7 @@ CubeTech/
 
 ---
 
-## ✨ Features
+## Features
 
 ### Customer
 - Browse products
